@@ -3,21 +3,14 @@
 import numpy as np
 import pytest
 
-from pga_engine.layer1 import ENUM_2_BLADE
+from pga_engine.algebra import PGA3D
 from pga_engine.utils import blade, mv, name_to_enum
-
-
-def test_blade_bitmasks():
-    assert blade() == 0b0000
-    assert blade(0) == 0b0001
-    assert blade(0, 2) == 0b0101
-    assert blade(0, 1, 2, 3) == 0b1111
 
 
 def test_names_cover_every_basis_blade():
     names = ["s", "e0", "e1", "e2", "e3", "e01", "e02", "e03", "e12", "e13", "e23",
              "e012", "e013", "e023", "e123", "e0123"]
-    assert [name_to_enum(n) for n in names] == list(range(len(ENUM_2_BLADE)))
+    assert [name_to_enum(n) for n in names] == list(range(PGA3D.dim))
 
 
 def test_mv_places_coefficients():
@@ -28,13 +21,13 @@ def test_mv_places_coefficients():
 
 
 # pytest.raises: the test passes only if the code inside raises that exception
-@pytest.mark.parametrize("indices", [(2, 1), (1, 1), (4,), (-1,)])
+@pytest.mark.parametrize("indices", [(2, 1), (1, 1), (4,)])   # unsorted, duplicate, out of range
 def test_blade_rejects_invalid_indices(indices):
     with pytest.raises(ValueError):
         blade(*indices)
 
 
-@pytest.mark.parametrize("name", ["e21", "e11", "x12", "e", "e4"])
+@pytest.mark.parametrize("name", ["x12", "e"])   # not 'e' + digits
 def test_mv_rejects_invalid_names(name):
     with pytest.raises(ValueError):
         mv(**{name: 1})

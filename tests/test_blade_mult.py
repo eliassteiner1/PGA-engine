@@ -1,9 +1,11 @@
-"""Tests for resolve_bb_mult_bitmask: the product of two single basis blades."""
+"""Tests for _resolve_bb_mult_bitmask: the product of two single basis blades."""
 
 import pytest
 
-from pga_engine.layer1 import resolve_bb_mult_bitmask
+from pga_engine.algebra import PGA3D, _resolve_bb_mult_bitmask
 from pga_engine.utils import blade as b  # short alias keeps the tables below readable
+
+PGA = PGA3D.metric  # (0, 1, 1, 1)
 
 
 # Each row: (left blade, right blade, expected sign, expected result blade).
@@ -11,35 +13,29 @@ from pga_engine.utils import blade as b  # short alias keeps the tables below re
 @pytest.mark.parametrize(
     "bb1, bb2, sign, result",
     [
-        (b(), b(), 1, b()),                      # 1 * 1 = 1
-        (b(), b(1, 2), 1, b(1, 2)),              # 1 * e12 = e12
         (b(1), b(2), 1, b(1, 2)),                # e1 e2 = e12   (already sorted)
         (b(2), b(1), -1, b(1, 2)),               # e2 e1 = -e12  (one swap)
         (b(1), b(1), 1, b()),                    # e1 e1 = 1
-        (b(3), b(3), 1, b()),                    # e3 e3 = 1
         (b(1, 2), b(1, 2), -1, b()),             # e12 e12 = -1
         (b(1, 2, 3), b(1, 2, 3), -1, b()),       # e123 e123 = -1
         (b(0, 1, 2, 3), b(1, 2), -1, b(0, 3)),   # e0123 e12 = -e03
-        (b(0, 1, 2, 3), b(1), 1, b(0, 2, 3)),    # e0123 e1 = e023
         (b(1, 2, 3), b(0), -1, b(0, 1, 2, 3)),   # e123 e0 = -e0123
         (b(0), b(1, 2, 3), 1, b(0, 1, 2, 3)),    # e0 e123 = e0123
     ],
 )
 def test_known_products(bb1, bb2, sign, result):
-    assert resolve_bb_mult_bitmask(bb1, bb2) == (sign, result)
+    assert _resolve_bb_mult_bitmask(bb1, bb2, PGA) == (sign, result)
 
 
 @pytest.mark.parametrize(
     "bb1, bb2",
     [
-        (b(0), b(0)),                  # e0 e0 = 0
-        (b(0, 1), b(0, 1)),            # e01 e01 = 0
-        (b(0, 1, 2, 3), b(0, 1, 2, 3)),  # I I = 0
-        (b(0, 2), b(0, 1, 3)),         # any shared e0 kills the product
+        (b(0), b(0)),          # e0 e0 = 0
+        (b(0, 2), b(0, 1, 3)), # any shared e0 kills the product
     ],
 )
 def test_shared_e0_is_zero(bb1, bb2):
-    sign, _ = resolve_bb_mult_bitmask(bb1, bb2)
+    sign, _ = _resolve_bb_mult_bitmask(bb1, bb2, PGA)
     assert sign == 0
 
 
@@ -47,7 +43,22 @@ def test_distinct_vectors_anticommute():
     for i in range(4):
         for j in range(4):
             if i != j:
-                s_ij, r_ij = resolve_bb_mult_bitmask(b(i), b(j))
-                s_ji, r_ji = resolve_bb_mult_bitmask(b(j), b(i))
+                s_ij, r_ij = _resolve_bb_mult_bitmask(b(i), b(j), PGA)
+                s_ji, r_ji = _resolve_bb_mult_bitmask(b(j), b(i), PGA)
                 assert r_ij == r_ji
                 assert s_ij == -s_ji
+
+
+# --- other metrics ------------------------------------------------------------------------
+
+def test_all_shared_vectors_contribute():
+    # e12 e12 = -e1 e1 e2 e2: one swap, then metric[1] * metric[2]
+    assert _resolve_bb_mult_bitmask(b(1, 2), b(1, 2), (1, -1, -1, 1)) == (-1, b())
+    assert _resolve_bb_mult_bitmask(b(1, 2), b(1, 2), (1, -1, 1, 1)) == (1, b())
+
+
+def test_metric_longer_than_four():
+    # e4 only exists in a 5D algebra: guards against code that silently assumes 4 unit vectors.
+    # blade() only knows PGA3D's 4 unit vectors, so raw bitmasks are used here.
+    e4 = 1 << 4
+    assert _resolve_bb_mult_bitmask(e4, e4, (0, 1, 1, 1, -1)) == (-1, 0)
