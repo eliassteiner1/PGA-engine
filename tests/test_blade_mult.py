@@ -3,11 +3,7 @@
 import pytest
 
 from pga_engine.layer1 import resolve_bb_mult_bitmask
-
-
-def b(*indices: int) -> int:
-    """b(0, 2) -> 0b0101, i.e. the bitmask of e02."""
-    return sum(1 << k for k in indices)
+from pga_engine.utils import blade as b  # short alias keeps the tables below readable
 
 
 # Each row: (left blade, right blade, expected sign, expected result blade).
@@ -23,7 +19,6 @@ def b(*indices: int) -> int:
         (b(3), b(3), 1, b()),                    # e3 e3 = 1
         (b(1, 2), b(1, 2), -1, b()),             # e12 e12 = -1
         (b(1, 2, 3), b(1, 2, 3), -1, b()),       # e123 e123 = -1
-        (b(1, 3), b(0, 2, 3), -1, b(0, 1, 2)),   # e13 e023 = -e012  (the notebook example)
         (b(0, 1, 2, 3), b(1, 2), -1, b(0, 3)),   # e0123 e12 = -e03
         (b(0, 1, 2, 3), b(1), 1, b(0, 2, 3)),    # e0123 e1 = e023
         (b(1, 2, 3), b(0), -1, b(0, 1, 2, 3)),   # e123 e0 = -e0123

@@ -7,7 +7,7 @@ basis_blades_idx = [
     
     # grade 0 (scalar)
     [],
-    # grad 1 (vector)
+    # grade 1 (vector)
     [0],
     [1],
     [2],
@@ -19,7 +19,7 @@ basis_blades_idx = [
     [1, 2],
     [1, 3],
     [2, 3],
-    # grad 3 (trivector)
+    # grade 3 (trivector)
     [0, 1, 2],
     [0, 1, 3],
     [0, 2, 3],
@@ -79,16 +79,16 @@ def resolve_bb_mult_index(bb1: list[int], bb2: list[int]) -> tuple[int, list[int
 
 # Bitmask Notation =====================================================================================================
 NR_UNITVECS = 4
-DIM = 16
+DIM = 2 ** NR_UNITVECS  # one basis blade per subset of unit vectors
 E0 = 0b_0001
 
 ENUM_2_BLADE = [
     # bitmask is : [e3|e2|e1|e0]
-    # this maps each basis blade "number/index" to it's corresponding bitmask representation. sorted by grade for convenience
+    # this maps each basis blade "number/index" to its corresponding bitmask representation. sorted by grade for convenience
     
     # grade 0 (scalar)
     0b_0000, # nr0
-    # grad 1 (vector)
+    # grade 1 (vector)
     0b_0001, # nr1
     0b_0010, # nr2
     0b_0100, # nr3
@@ -100,7 +100,7 @@ ENUM_2_BLADE = [
     0b_0110, # nr8
     0b_1010, # nr9
     0b_1100, # nr10
-    # grad 3 (trivector)
+    # grade 3 (trivector)
     0b_0111, # nr11
     0b_1011, # nr12
     0b_1101, # nr13
@@ -110,12 +110,12 @@ ENUM_2_BLADE = [
 ]
 
 BLADE_2_ENUM = {
-    # this is the reverse mapping to go from a BB in bitmask representation (which is also just a numer! but not the index) -> it's index (sorted by grade)
+    # this is the reverse mapping to go from a BB in bitmask representation (which is also just a number! but not the index) -> its index (sorted by grade)
     blade: i for i, blade in enumerate(ENUM_2_BLADE)
 }
 
 def resolve_bb_mult_bitmask(bb1: int, bb2: int) -> tuple[int, int]:
-    """ a more efficient way to resolve the multiplication of two elementary basis blades. XOR on their bitmasks directly yields the resulting bb. if a double e0 is present, the result is instantly 0. tracking the sing change needs a bit more attention... """
+    """ a more efficient way to resolve the multiplication of two elementary basis blades. XOR on their bitmasks directly yields the resulting bb. if a double e0 is present, the result is instantly 0. tracking the sign change needs a bit more attention... """
     
     # in case that both inputs carry the unitvector e0, the whole multiplication reduces to scalar 0
     if bb1 & bb2 & E0:
@@ -154,9 +154,11 @@ def _build_cayley() -> tuple[np.ndarray, np.ndarray]:
     return signs, table
 
 CAYLEY_SIGNS, CAYLEY_TABLE = _build_cayley()
+CAYLEY_SIGNS.flags.writeable = False
+CAYLEY_TABLE.flags.writeable = False
 
-def gp(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
-    """ computes the geometric product ab = a·b + a^b """
+def _gp_loop(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
+    """ computes the geometric product for arbitrary multivectors. this is the "more understandable" version that does the calculation through a loop """
     
     v1v2 = np.zeros(DIM)
 
@@ -173,3 +175,7 @@ def gp(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
             v1v2[resulting_blade_idx] += res_sign_change * coeff1 * coeff2
     
     return v1v2
+
+
+
+
