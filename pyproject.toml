@@ -1,0 +1,30 @@
+[project]
+name = "pga-engine"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Elias Steiner", email = "elias.steiner@gmx.ch" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "numpy>=2.5.5",
+    "tqdm>=4.70.1",
+]
+
+[project.scripts]
+pga-engine = "pga_engine:main"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+    "matplotlib>=3.11.2",
+    "pytest>=9.2.0",
+]
