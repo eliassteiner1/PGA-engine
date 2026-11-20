@@ -2,7 +2,7 @@
 
 import pytest
 
-from pga_engine.algebra import PGA3D, _resolve_bb_mult_bitmask
+from pga_engine.algebra import PGA3D, _bb_bitmask_resolve_multiplication
 from pga_engine.utils import blade as b  # short alias keeps the tables below readable
 
 PGA = PGA3D.metric  # (0, 1, 1, 1)
@@ -24,7 +24,7 @@ PGA = PGA3D.metric  # (0, 1, 1, 1)
     ],
 )
 def test_known_products(bb1, bb2, sign, result):
-    assert _resolve_bb_mult_bitmask(bb1, bb2, PGA) == (sign, result)
+    assert _bb_bitmask_resolve_multiplication(bb1, bb2, PGA) == (sign, result)
 
 
 @pytest.mark.parametrize(
@@ -35,7 +35,7 @@ def test_known_products(bb1, bb2, sign, result):
     ],
 )
 def test_shared_e0_is_zero(bb1, bb2):
-    sign, _ = _resolve_bb_mult_bitmask(bb1, bb2, PGA)
+    sign, _ = _bb_bitmask_resolve_multiplication(bb1, bb2, PGA)
     assert sign == 0
 
 
@@ -43,8 +43,8 @@ def test_distinct_vectors_anticommute():
     for i in range(4):
         for j in range(4):
             if i != j:
-                s_ij, r_ij = _resolve_bb_mult_bitmask(b(i), b(j), PGA)
-                s_ji, r_ji = _resolve_bb_mult_bitmask(b(j), b(i), PGA)
+                s_ij, r_ij = _bb_bitmask_resolve_multiplication(b(i), b(j), PGA)
+                s_ji, r_ji = _bb_bitmask_resolve_multiplication(b(j), b(i), PGA)
                 assert r_ij == r_ji
                 assert s_ij == -s_ji
 
@@ -53,12 +53,12 @@ def test_distinct_vectors_anticommute():
 
 def test_all_shared_vectors_contribute():
     # e12 e12 = -e1 e1 e2 e2: one swap, then metric[1] * metric[2]
-    assert _resolve_bb_mult_bitmask(b(1, 2), b(1, 2), (1, -1, -1, 1)) == (-1, b())
-    assert _resolve_bb_mult_bitmask(b(1, 2), b(1, 2), (1, -1, 1, 1)) == (1, b())
+    assert _bb_bitmask_resolve_multiplication(b(1, 2), b(1, 2), (1, -1, -1, 1)) == (-1, b())
+    assert _bb_bitmask_resolve_multiplication(b(1, 2), b(1, 2), (1, -1, 1, 1)) == (1, b())
 
 
 def test_metric_longer_than_four():
     # e4 only exists in a 5D algebra: guards against code that silently assumes 4 unit vectors.
     # blade() only knows PGA3D's 4 unit vectors, so raw bitmasks are used here.
     e4 = 1 << 4
-    assert _resolve_bb_mult_bitmask(e4, e4, (0, 1, 1, 1, -1)) == (-1, 0)
+    assert _bb_bitmask_resolve_multiplication(e4, e4, (0, 1, 1, 1, -1)) == (-1, 0)

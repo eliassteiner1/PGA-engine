@@ -52,8 +52,8 @@ def test_sizes(alg):
 
 
 def test_blades_sorted_by_grade(alg):
-    assert np.all(np.diff(alg.grade) >= 0)
-    assert alg.grade[0] == 0 and alg.grade[-1] == alg.nr_unitvecs
+    assert np.all(np.diff(alg.blades_grades) >= 0)
+    assert alg.blades_grades[0] == 0 and alg.blades_grades[-1] == alg.nr_unitvecs
 
 
 def test_table_values(alg):

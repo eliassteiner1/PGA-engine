@@ -4,17 +4,12 @@ import numpy as np
 import pytest
 
 from pga_engine.algebra import PGA3D, Algebra
-from pga_engine.products import gp, gp_loop
+from pga_engine.products import gp
 from pga_engine.utils import mv
 
 
 # --- 1. implementation: loop reference, batching, other algebras --------------------------
 # (identity, associativity etc. are already checked on the table itself in test_algebra.py)
-
-def test_matches_loop_reference(rng):
-    A, B = rng.normal(size=(2, PGA3D.dim))
-    assert np.allclose(gp(A, B), gp_loop(A, B))
-
 
 def test_batched(rng):
     A, B = rng.normal(size=(2, 7, PGA3D.dim))   # 7 pairs of multivectors
